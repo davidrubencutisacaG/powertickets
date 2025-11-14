@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("../database/entities/user.entity");
+const organizer_entity_1 = require("../database/entities/organizer.entity");
 let UsersService = class UsersService {
-    constructor(usersRepository) {
+    constructor(usersRepository, organizersRepository) {
         this.usersRepository = usersRepository;
+        this.organizersRepository = organizersRepository;
     }
     findByEmail(email) {
         return this.usersRepository.findOne({ where: { email } });
@@ -102,13 +104,26 @@ let UsersService = class UsersService {
         }
         user.role = user_entity_1.UserRole.ORGANIZER;
         user.organizerStatus = user_entity_1.OrganizerStatus.PENDING;
-        return this.usersRepository.save(user);
+        await this.usersRepository.save(user);
+        let organizer = await this.organizersRepository.findOne({
+            where: { user: { id: userId } },
+        });
+        if (!organizer) {
+            organizer = this.organizersRepository.create({
+                user,
+                status: organizer_entity_1.OrganizerStatus.PENDING,
+            });
+            await this.organizersRepository.save(organizer);
+        }
+        return user;
     }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(organizer_entity_1.Organizer)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event, EventStatus } from '../database/entities/event.entity';
-import { Organizer } from '../database/entities/organizer.entity';
+import { Organizer, OrganizerStatus } from '../database/entities/organizer.entity';
 import { TicketType, TicketTypeStatus } from '../database/entities/ticket-type.entity';
 import { TicketInstance, TicketInstanceStatus } from '../database/entities/ticket-instance.entity';
+import { User } from '../database/entities/user.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { randomUUID } from 'crypto';
@@ -20,16 +21,60 @@ export class EventsService {
     private readonly ticketTypesRepository: Repository<TicketType>,
     @InjectRepository(TicketInstance)
     private readonly ticketInstancesRepository: Repository<TicketInstance>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(dto: CreateEventDto) {
-    const organizer = await this.organizersRepository.findOne({ where: { id: dto.organizerId } });
+  /**
+   * Encuentra o crea un Organizer para un User dado
+   */
+  async findOrCreateOrganizerForUser(userId: string): Promise<Organizer> {
+    // Buscar si ya existe un Organizer para este usuario
+    let organizer = await this.organizersRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+
     if (!organizer) {
-      throw new NotFoundException('Organizer not found');
+      // Si no existe, crear uno nuevo
+      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      organizer = this.organizersRepository.create({
+        user,
+        status: OrganizerStatus.PENDING,
+      });
+      organizer = await this.organizersRepository.save(organizer);
     }
 
+    return organizer;
+  }
+
+  async create(dto: CreateEventDto, userId?: string) {
+    let organizer: Organizer | null = null;
+
+    // Si se proporciona userId, usar el usuario actual (para compatibilidad con el frontend)
+    if (userId) {
+      organizer = await this.findOrCreateOrganizerForUser(userId);
+    } else if (dto.organizerId) {
+      // Si se proporciona organizerId en el DTO, usarlo (para compatibilidad hacia atrás)
+      organizer = await this.organizersRepository.findOne({ where: { id: dto.organizerId } });
+      if (!organizer) {
+        throw new NotFoundException('Organizer not found');
+      }
+    } else {
+      throw new BadRequestException('Either userId or organizerId must be provided');
+    }
+
+    // En este punto, organizer está garantizado que no es null
+    // (ya sea por findOrCreateOrganizerForUser que siempre retorna Organizer,
+    //  o por la validación anterior que lanza excepción si es null)
+    const finalOrganizer: Organizer = organizer;
+
     const event = this.eventsRepository.create({
-      organizer,
+      organizer: finalOrganizer,
       name: dto.name,
       description: dto.description,
       category: dto.category,
@@ -116,5 +161,24 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
     return event;
+  }
+
+  async findByOrganizerUserId(userId: string) {
+    // Buscar el Organizer del usuario
+    const organizer = await this.organizersRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!organizer) {
+      // Si no existe Organizer, retornar array vacío
+      return [];
+    }
+
+    // Retornar todos los eventos del organizador
+    return this.eventsRepository.find({
+      where: { organizer: { id: organizer.id } },
+      relations: ['ticketTypes', 'organizer'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }

@@ -20,22 +20,52 @@ const event_entity_1 = require("../database/entities/event.entity");
 const organizer_entity_1 = require("../database/entities/organizer.entity");
 const ticket_type_entity_1 = require("../database/entities/ticket-type.entity");
 const ticket_instance_entity_1 = require("../database/entities/ticket-instance.entity");
+const user_entity_1 = require("../database/entities/user.entity");
 const crypto_1 = require("crypto");
 let EventsService = class EventsService {
-    constructor(eventsRepository, organizersRepository, ticketTypesRepository, ticketInstancesRepository) {
+    constructor(eventsRepository, organizersRepository, ticketTypesRepository, ticketInstancesRepository, usersRepository) {
         this.eventsRepository = eventsRepository;
         this.organizersRepository = organizersRepository;
         this.ticketTypesRepository = ticketTypesRepository;
         this.ticketInstancesRepository = ticketInstancesRepository;
+        this.usersRepository = usersRepository;
     }
-    async create(dto) {
-        var _a, _b;
-        const organizer = await this.organizersRepository.findOne({ where: { id: dto.organizerId } });
+    async findOrCreateOrganizerForUser(userId) {
+        let organizer = await this.organizersRepository.findOne({
+            where: { user: { id: userId } },
+            relations: ['user'],
+        });
         if (!organizer) {
-            throw new common_1.NotFoundException('Organizer not found');
+            const user = await this.usersRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                throw new common_1.NotFoundException('User not found');
+            }
+            organizer = this.organizersRepository.create({
+                user,
+                status: organizer_entity_1.OrganizerStatus.PENDING,
+            });
+            organizer = await this.organizersRepository.save(organizer);
         }
+        return organizer;
+    }
+    async create(dto, userId) {
+        var _a, _b;
+        let organizer = null;
+        if (userId) {
+            organizer = await this.findOrCreateOrganizerForUser(userId);
+        }
+        else if (dto.organizerId) {
+            organizer = await this.organizersRepository.findOne({ where: { id: dto.organizerId } });
+            if (!organizer) {
+                throw new common_1.NotFoundException('Organizer not found');
+            }
+        }
+        else {
+            throw new common_1.BadRequestException('Either userId or organizerId must be provided');
+        }
+        const finalOrganizer = organizer;
         const event = this.eventsRepository.create({
-            organizer,
+            organizer: finalOrganizer,
             name: dto.name,
             description: dto.description,
             category: dto.category,
@@ -115,6 +145,19 @@ let EventsService = class EventsService {
         }
         return event;
     }
+    async findByOrganizerUserId(userId) {
+        const organizer = await this.organizersRepository.findOne({
+            where: { user: { id: userId } },
+        });
+        if (!organizer) {
+            return [];
+        }
+        return this.eventsRepository.find({
+            where: { organizer: { id: organizer.id } },
+            relations: ['ticketTypes', 'organizer'],
+            order: { createdAt: 'DESC' },
+        });
+    }
 };
 exports.EventsService = EventsService;
 exports.EventsService = EventsService = __decorate([
@@ -123,7 +166,9 @@ exports.EventsService = EventsService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(organizer_entity_1.Organizer)),
     __param(2, (0, typeorm_1.InjectRepository)(ticket_type_entity_1.TicketType)),
     __param(3, (0, typeorm_1.InjectRepository)(ticket_instance_entity_1.TicketInstance)),
+    __param(4, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])

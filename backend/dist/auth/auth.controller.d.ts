@@ -8,6 +8,7 @@ export declare class AuthController {
     registerBuyer(dto: RegisterDto): Promise<import("../database/entities/user.entity").User>;
     registerOrganizer(dto: RegisterDto): Promise<import("../database/entities/user.entity").User>;
     login(dto: LoginDto): Promise<{
+        access_token: string;
         accessToken: string;
         user: import("../database/entities/user.entity").User;
     }>;

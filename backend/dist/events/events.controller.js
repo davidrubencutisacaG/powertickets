@@ -20,17 +20,21 @@ const update_event_dto_1 = require("./dto/update-event.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const user_entity_1 = require("../database/entities/user.entity");
 const swagger_1 = require("@nestjs/swagger");
 let EventsController = class EventsController {
     constructor(eventsService) {
         this.eventsService = eventsService;
     }
-    create(dto) {
-        return this.eventsService.create(dto);
+    create(user, dto) {
+        return this.eventsService.create(dto, user.id);
     }
     findAll() {
         return this.eventsService.findAll();
+    }
+    getMyEvents(user) {
+        return this.eventsService.findByOrganizerUserId(user.id);
     }
     findOne(id) {
         return this.eventsService.findById(id);
@@ -45,9 +49,10 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ORGANIZER),
     (0, swagger_1.ApiBearerAuth)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_event_dto_1.CreateEventDto]),
+    __metadata("design:paramtypes", [user_entity_1.User, create_event_dto_1.CreateEventDto]),
     __metadata("design:returntype", void 0)
 ], EventsController.prototype, "create", null);
 __decorate([
@@ -56,6 +61,16 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], EventsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('organizer/me'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ORGANIZER),
+    (0, swagger_1.ApiBearerAuth)(),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:returntype", void 0)
+], EventsController.prototype, "getMyEvents", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

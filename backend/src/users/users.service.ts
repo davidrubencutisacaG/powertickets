@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, OrganizerStatus } from '../database/entities/user.entity';
+import { Organizer, OrganizerStatus as OrganizerEntityStatus } from '../database/entities/organizer.entity';
 import { UpgradeToOrganizerDto } from './dto/upgrade-to-organizer.dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Organizer)
+    private readonly organizersRepository: Repository<Organizer>,
   ) {}
 
   findByEmail(email: string) {
@@ -119,6 +122,21 @@ export class UsersService {
     // Poner organizerStatus = OrganizerStatus.PENDING
     user.organizerStatus = OrganizerStatus.PENDING;
 
-    return this.usersRepository.save(user);
+    await this.usersRepository.save(user);
+
+    // Crear registro Organizer si no existe
+    let organizer = await this.organizersRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!organizer) {
+      organizer = this.organizersRepository.create({
+        user,
+        status: OrganizerEntityStatus.PENDING,
+      });
+      await this.organizersRepository.save(organizer);
+    }
+
+    return user;
   }
 }

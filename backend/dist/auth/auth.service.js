@@ -19,9 +19,11 @@ const typeorm_2 = require("typeorm");
 const bcrypt = require("bcryptjs");
 const jwt_1 = require("@nestjs/jwt");
 const user_entity_1 = require("../database/entities/user.entity");
+const organizer_entity_1 = require("../database/entities/organizer.entity");
 let AuthService = class AuthService {
-    constructor(usersRepository, jwtService) {
+    constructor(usersRepository, organizersRepository, jwtService) {
         this.usersRepository = usersRepository;
+        this.organizersRepository = organizersRepository;
         this.jwtService = jwtService;
     }
     async register(dto) {
@@ -32,7 +34,15 @@ let AuthService = class AuthService {
         const role = dto.role === user_entity_1.UserRole.ADMIN ? user_entity_1.UserRole.BUYER : dto.role;
         const password = await bcrypt.hash(dto.password, 10);
         const user = this.usersRepository.create(Object.assign(Object.assign({}, dto), { password, role }));
-        return this.usersRepository.save(user);
+        const savedUser = await this.usersRepository.save(user);
+        if (role === user_entity_1.UserRole.ORGANIZER) {
+            const organizer = this.organizersRepository.create({
+                user: savedUser,
+                status: organizer_entity_1.OrganizerStatus.PENDING,
+            });
+            await this.organizersRepository.save(organizer);
+        }
+        return savedUser;
     }
     async validateUser(email, password) {
         const user = await this.usersRepository.findOne({ where: { email } });
@@ -50,6 +60,7 @@ let AuthService = class AuthService {
         const payload = { sub: user.id, role: user.role };
         const token = await this.jwtService.signAsync(payload);
         return {
+            access_token: token,
             accessToken: token,
             user,
         };
@@ -59,7 +70,9 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(1, (0, typeorm_1.InjectRepository)(organizer_entity_1.Organizer)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

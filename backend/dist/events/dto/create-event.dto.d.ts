@@ -11,7 +11,7 @@ declare class TicketTypeInput {
     status?: TicketTypeStatus;
 }
 export declare class CreateEventDto {
-    organizerId: string;
+    organizerId?: string;
     name: string;
     description: string;
     category: EventCategory;

@@ -1,18 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types/roles';
 import logo from '../assets/logo-powertickets.png';
 import './Header.css';
 
 type HeaderProps = {
   onSearchChange?: (value: string) => void;
-  onLoginClick?: () => void;
-  currentUser?: { email: string; role: string } | null;
 };
 
-export default function Header({
-  onSearchChange,
-  onLoginClick,
-  currentUser,
-}: HeaderProps) {
+export default function Header({ onSearchChange }: HeaderProps) {
+  const navigate = useNavigate();
+  const { user: currentUser, logout, isAuthenticated, hasRole } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -22,18 +21,44 @@ export default function Header({
     onSearchChange?.(value);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setShowUserMenu(false);
+  };
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
+
   return (
     <header className="main-header">
       <div className="header-container">
         <div className="header-left">
-          <img src={logo} alt="PowerTickets" className="header-logo" />
+          <Link to="/" className="header-logo-link">
+            <img src={logo} alt="PowerTickets" className="header-logo" />
+          </Link>
         </div>
 
         <nav className="header-nav">
-          <a href="#" className="nav-link">Inicio</a>
-          <a href="#" className="nav-link">Eventos</a>
-          <a href="#" className="nav-link">Categorías</a>
-          <a href="#" className="nav-link">Contacto</a>
+          <Link to="/" className="nav-link">Inicio</Link>
+          <Link to="/" className="nav-link">Eventos</Link>
+          <Link to="/" className="nav-link">Categorías</Link>
+          <Link to="/" className="nav-link">Contacto</Link>
         </nav>
 
         <div className="header-right">
@@ -48,7 +73,7 @@ export default function Header({
             <span className="search-icon">🔍</span>
           </div>
 
-          {currentUser ? (
+          {isAuthenticated && currentUser ? (
             <div className="user-menu-container">
               <button
                 className="user-button"
@@ -58,22 +83,60 @@ export default function Header({
               </button>
               {showUserMenu && (
                 <div className="user-menu-dropdown">
-                  <a href="#" className="user-menu-item">Mi Cuenta</a>
-                  <a href="#" className="user-menu-item">Mis Tickets</a>
-                  <button className="user-menu-item" onClick={onLoginClick}>
+                  {/* Menú para comprador */}
+                  {hasRole(UserRole.COMPRADOR) && (
+                    <>
+                      <Link to="/carrito" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                        Carrito
+                      </Link>
+                      <Link to="/mis-compras" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                        Mis Compras
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Menú para organizador */}
+                  {hasRole(UserRole.ORGANIZADOR) && (
+                    <>
+                      <Link to="/organizador/crear-evento" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                        Crear Evento
+                      </Link>
+                      <Link to="/organizador/mis-eventos" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                        Mis Eventos
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Menú para admin */}
+                  {hasRole(UserRole.ADMIN) && (
+                    <Link to="/admin/cuentas-por-aprobar" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                      Cuentas por Aprobar
+                    </Link>
+                  )}
+
+                  {/* Opciones comunes para todos los usuarios logueados */}
+                  <Link to="/mi-cuenta" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                    Mi Cuenta
+                  </Link>
+                  
+                  <button className="user-menu-item" onClick={handleLogout}>
                     Cerrar Sesión
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <button className="login-button" onClick={onLoginClick}>
-              Iniciar Sesión
-            </button>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button className="register-button" onClick={() => navigate('/registro')}>
+                Registrarte
+              </button>
+              <button className="login-button" onClick={() => navigate('/login')}>
+                Iniciar Sesión
+              </button>
+            </div>
           )}
         </div>
       </div>
     </header>
   );
 }
-

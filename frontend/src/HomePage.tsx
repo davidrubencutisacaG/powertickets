@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from "./contexts/AuthContext";
+import { UserRole } from './types/roles';
 import Carousel from './components/Carousel';
 import EventCard from './components/EventCard';
 import SidebarDestacados from './components/SidebarDestacados';
@@ -17,15 +21,17 @@ type HomePageProps = {
   events: Event[];
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  onEventClick?: (id: string) => void;
 };
 
 export default function HomePage({
   events,
   searchTerm,
   onSearchChange,
-  onEventClick,
 }: HomePageProps) {
+  const navigate = useNavigate();
+  const { isAuthenticated, hasRole } = useAuth();
+  const [message, setMessage] = useState('');
+
   // Validación defensiva: asegurar que events siempre sea un array
   const eventsArray = Array.isArray(events) ? events : [];
   
@@ -64,6 +70,38 @@ export default function HomePage({
     imageUrl: event.flyerUrl || `/events/${event.id}.jpg`,
   }));
 
+  // Función para agregar evento al carrito
+  const handleAddToCart = (event: { id: string; name: string; date: string; location: string; price: number; imageUrl?: string }) => {
+    if (!isAuthenticated || !hasRole(UserRole.COMPRADOR)) {
+      setMessage('Debes iniciar sesión como comprador para agregar eventos al carrito');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      return;
+    }
+
+    try {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const existingItem = cart.find((item: any) => item.id === event.id);
+
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({
+          ...event,
+          quantity: 1,
+        });
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      setMessage('Evento agregado al carrito ✅');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      setMessage('Error al agregar evento al carrito');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
   return (
     <div className="home-page">
       {/* Carrusel de eventos destacados */}
@@ -83,6 +121,12 @@ export default function HomePage({
             />
           </section>
 
+          {message && (
+            <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
+              {message}
+            </div>
+          )}
+
           {/* Grid de eventos */}
           <section className="events-grid-section">
             <h2 className="section-title">Todos los Eventos</h2>
@@ -98,7 +142,12 @@ export default function HomePage({
                     category={event.category}
                     price={event.price}
                     imageUrl={event.flyerUrl || `/events/${event.id}.jpg`}
-                    onClick={() => onEventClick?.(event.id)}
+                    onClick={() => {
+                      // Aquí puedes navegar al detalle del evento
+                      console.log('Evento clickeado:', event.id);
+                    }}
+                    onAddToCart={handleAddToCart}
+                    showAddToCart={isAuthenticated && hasRole(UserRole.COMPRADOR) && event.price !== undefined}
                   />
                 ))}
               </div>
@@ -114,7 +163,9 @@ export default function HomePage({
         <aside className="home-sidebar">
           <SidebarDestacados
             events={featuredEvents}
-            onEventClick={onEventClick}
+            onEventClick={(id) => {
+              console.log('Evento clickeado:', id);
+            }}
           />
         </aside>
       </div>

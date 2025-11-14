@@ -9,6 +9,8 @@ type EventCardProps = {
   price?: number;
   imageUrl?: string;
   onClick?: () => void;
+  onAddToCart?: (event: { id: string; name: string; date: string; location: string; price: number; imageUrl?: string }) => void;
+  showAddToCart?: boolean;
 };
 
 export default function EventCard({
@@ -20,6 +22,8 @@ export default function EventCard({
   price,
   imageUrl,
   onClick,
+  onAddToCart,
+  showAddToCart = false,
 }: EventCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -33,6 +37,20 @@ export default function EventCard({
   const formatPrice = (price?: number) => {
     if (!price) return 'Gratis';
     return `S/ ${price.toFixed(2)}`;
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onAddToCart && price !== undefined) {
+      onAddToCart({
+        id,
+        name,
+        date,
+        location,
+        price,
+        imageUrl,
+      });
+    }
   };
 
   return (
@@ -55,6 +73,14 @@ export default function EventCard({
         </div>
         {price !== undefined && (
           <div className="event-card-price">{formatPrice(price)}</div>
+        )}
+        {showAddToCart && onAddToCart && price !== undefined && (
+          <button
+            className="event-card-add-to-cart"
+            onClick={handleAddToCart}
+          >
+            Agregar al Carrito
+          </button>
         )}
       </div>
     </div>

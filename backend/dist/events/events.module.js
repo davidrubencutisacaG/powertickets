@@ -15,12 +15,13 @@ const events_controller_1 = require("./events.controller");
 const organizer_entity_1 = require("../database/entities/organizer.entity");
 const ticket_type_entity_1 = require("../database/entities/ticket-type.entity");
 const ticket_instance_entity_1 = require("../database/entities/ticket-instance.entity");
+const user_entity_1 = require("../database/entities/user.entity");
 let EventsModule = class EventsModule {
 };
 exports.EventsModule = EventsModule;
 exports.EventsModule = EventsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([event_entity_1.Event, organizer_entity_1.Organizer, ticket_type_entity_1.TicketType, ticket_instance_entity_1.TicketInstance])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([event_entity_1.Event, organizer_entity_1.Organizer, ticket_type_entity_1.TicketType, ticket_instance_entity_1.TicketInstance, user_entity_1.User])],
         providers: [events_service_1.EventsService],
         controllers: [events_controller_1.EventsController],
         exports: [events_service_1.EventsService],

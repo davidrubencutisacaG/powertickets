@@ -1,0 +1,117 @@
+.mis-compras-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.mis-compras-content {
+  background-color: #1f1f1f;
+  border-radius: 12px;
+  padding: 40px;
+  border: 1px solid #333;
+}
+
+.mis-compras-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.mis-compras-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #cccccc;
+  font-size: 1.2rem;
+}
+
+.purchases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.purchase-card {
+  background-color: #121212;
+  border-radius: 8px;
+  padding: 24px;
+  border: 1px solid #333;
+}
+
+.purchase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #333;
+}
+
+.purchase-header h3 {
+  color: #ffffff;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.ticket-code {
+  color: #ff7a1a;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background-color: rgba(255, 122, 26, 0.1);
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.purchase-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.purchase-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.detail-label {
+  color: #cccccc;
+  font-size: 0.95rem;
+}
+
+.detail-value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.total-row {
+  margin-top: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #333;
+}
+
+.total-row .detail-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.total-row .total {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ff7a1a;
+}
+
+@media (max-width: 768px) {
+  .purchase-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .purchase-detail-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+

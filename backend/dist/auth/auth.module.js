@@ -14,6 +14,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const user_entity_1 = require("../database/entities/user.entity");
+const organizer_entity_1 = require("../database/entities/organizer.entity");
 const users_module_1 = require("../users/users.module");
 const jwt_strategy_1 = require("./jwt.strategy");
 const config_1 = require("@nestjs/config");
@@ -26,7 +27,7 @@ exports.AuthModule = AuthModule = __decorate([
             config_1.ConfigModule,
             users_module_1.UsersModule,
             passport_1.PassportModule,
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User]),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, organizer_entity_1.Organizer]),
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],

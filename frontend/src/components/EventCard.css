@@ -91,6 +91,24 @@
   border-top: 1px solid #f0f0f0;
 }
 
+.event-card-add-to-cart {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background-color: #ff7a1a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.event-card-add-to-cart:hover {
+  background-color: #ff8c33;
+}
+
 @media (max-width: 768px) {
   .event-card-image {
     height: 200px;

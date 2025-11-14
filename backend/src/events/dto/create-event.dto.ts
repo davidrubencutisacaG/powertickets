@@ -42,8 +42,9 @@ class TicketTypeInput {
 }
 
 export class CreateEventDto {
+  @IsOptional()
   @IsString()
-  organizerId!: string;
+  organizerId?: string;
 
   @IsString()
   name!: string;

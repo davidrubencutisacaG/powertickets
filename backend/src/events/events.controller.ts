@@ -5,7 +5,8 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '../database/entities/user.entity';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User, UserRole } from '../database/entities/user.entity';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('events')
@@ -17,13 +18,21 @@ export class EventsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ORGANIZER)
   @ApiBearerAuth()
-  create(@Body() dto: CreateEventDto) {
-    return this.eventsService.create(dto);
+  create(@CurrentUser() user: User, @Body() dto: CreateEventDto) {
+    return this.eventsService.create(dto, user.id);
   }
 
   @Get()
   findAll() {
     return this.eventsService.findAll();
+  }
+
+  @Get('organizer/me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ORGANIZER)
+  @ApiBearerAuth()
+  getMyEvents(@CurrentUser() user: User) {
+    return this.eventsService.findByOrganizerUserId(user.id);
   }
 
   @Get(':id')
